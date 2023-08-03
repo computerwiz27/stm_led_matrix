@@ -119,7 +119,7 @@ int main(void)
   MX_USART2_UART_Init();
   MX_TIM1_Init();
   /* USER CODE BEGIN 2 */
-  uint8_t txt[30] = "hello\n\r";
+  uint8_t txt[30] = "hello1\n\r";
   HAL_UART_Transmit(&huart2, txt, sizeof(txt), 10);
 
   HAL_UART_Receive_IT(&huart2, rx_data, sizeof(rx_data));  

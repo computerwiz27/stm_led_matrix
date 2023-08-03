@@ -16,7 +16,41 @@
             "windowsSdkVersion": "10.0.22000.0",
             "cStandard": "c17",
             "cppStandard": "c++17",
-            "intelliSenseMode": "windows-msvc-arm64"
+            "intelliSenseMode": "windows-msvc-arm"
+        },
+        {
+            "name": "Linux",
+            "includePath": [
+                "/home/paul/Code/stm_led_matrix/**",
+                "/home/paul/Code/stm_led_matrix/led_matrix_controller/**",
+                "/home/paul/Code/stm_led_matrix/led_matrix_controller/Core/Inc",
+                "/home/paul/Code/stm_led_matrix/led_matrix_controller/Drivers/CMSIS/Include",
+                "/home/paul/Code/stm_led_matrix/led_matrix_controller/Drivers/STM32F1xx_HAL_Driver/Inc"
+            ],
+            "defines": [
+                "_DEBUG",
+                "UNICODE",
+                "_UNICODE",
+                "USE_HAL_DRIVER",
+                "STM32F103xB",
+                "__CC_ARM"
+            ],
+            "cStandard": "c23",
+            "cppStandard": "c++20",
+            "intelliSenseMode": "linux-gcc-arm",
+            "macFrameworkPath": [],
+            "mergeConfigurations": false,
+            "compilerPath": "/usr/bin/arm-none-eabi-gcc",
+            "browse": {
+                "path": [
+                    "/home/paul/Code/stm_led_matrix/**",
+                    "/home/paul/Code/stm_led_matrix/led_matrix_controller/**",
+                    "/home/paul/Code/stm_led_matrix/led_matrix_controller/Core/Inc",
+                    "/home/paul/Code/stm_led_matrix/led_matrix_controller/Drivers/CMSIS/Include",
+                    "/home/paul/Code/stm_led_matrix/led_matrix_controller/Drivers/STM32F1xx_HAL_Driver/Inc"
+                ],
+                "limitSymbolsToIncludedHeaders": true
+            }
         }
     ],
     "version": 4
