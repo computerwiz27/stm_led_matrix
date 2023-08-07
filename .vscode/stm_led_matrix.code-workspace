@@ -18,6 +18,7 @@
 		"cortex-debug.armToolchainPath": "/usr/lib/gcc-arm-none-eabi-10.3-2021.10/bin",
 		"cortex-debug.stutilPath": "/usr/bin/st-util",
 		"cortex-debug.stm32cubeprogrammer": "/home/paul/.local/lib/STMicroelectronics/STM32Cube/STM32CubeProgrammer/bin/",
-		"cortex-debug.stlinkPath.linux": "/home/paul/.local/lib/STMicroelectronics/st/stmcubeide/plugins/com.st.stm32cube.ide.mcu.externaltools.stlink-gdb-server.linux64_2.1.0.202305091550/tools/bin/ST-LINK_gdbserver"
+		"cortex-debug.stlinkPath.linux": "/home/paul/.local/lib/STMicroelectronics/st/stmcubeide/plugins/com.st.stm32cube.ide.mcu.externaltools.stlink-gdb-server.linux64_2.1.0.202305091550/tools/bin/ST-LINK_gdbserver",
+		"cortex-debug.variableUseNaturalFormat": true
 	}
 }

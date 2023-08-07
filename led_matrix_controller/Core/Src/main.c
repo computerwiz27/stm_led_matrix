@@ -37,7 +37,7 @@
 
 // LED data transfer times
 #define DUTY_CYCLE 1250 // ns
-#define T0H 350         // ns
+#define T0H 280         // ns
 #define T1H 650         // ns
 #define RES 280         // us
 /* USER CODE END PD */
@@ -52,6 +52,7 @@ TIM_HandleTypeDef htim1;
 DMA_HandleTypeDef hdma_tim1_ch1;
 
 UART_HandleTypeDef huart2;
+DMA_HandleTypeDef hdma_usart2_rx;
 
 /* USER CODE BEGIN PV */
 int quitFlag = 0;
@@ -127,11 +128,14 @@ int main(void)
   MX_USART2_UART_Init();
   MX_TIM1_Init();
   /* USER CODE BEGIN 2 */
+  CalculateDataValues();
+
   Reset_LEDs();
   Set_LEDs(75, 0, 0);
   Send_LEDs();
+
   SerialInterface_Init();
-  HAL_UART_Receive_IT(&huart2, ser.rx_command_buf, ser.command_size);
+  HAL_UART_Receive_DMA(&huart2, ser.rx_command_buf, ser.command_size);
   Blink(3);
   /* USER CODE END 2 */
 
@@ -139,8 +143,9 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (!quitFlag)
   {
-    /* USER CODE END WHILE */
     Send_LEDs();
+    /* USER CODE END WHILE */
+
     /* USER CODE BEGIN 3 */
   }
 
@@ -310,6 +315,9 @@ static void MX_DMA_Init(void)
   /* DMA1_Channel2_IRQn interrupt configuration */
   HAL_NVIC_SetPriority(DMA1_Channel2_IRQn, 0, 0);
   HAL_NVIC_EnableIRQ(DMA1_Channel2_IRQn);
+  /* DMA1_Channel6_IRQn interrupt configuration */
+  HAL_NVIC_SetPriority(DMA1_Channel6_IRQn, 0, 0);
+  HAL_NVIC_EnableIRQ(DMA1_Channel6_IRQn);
 
 }
 
@@ -376,20 +384,21 @@ void HAL_TIM_PWM_PulseFinishedCallback(TIM_HandleTypeDef *htim)
 
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 {
+  char hello[20] = "received\n\r";
+  HAL_UART_Transmit(&huart2, hello, sizeof(hello), 10);
+
   UNUSED(huart);
 
   if (ser.expect_comm_flag == SET) 
   {
     ProcessCommand(ser.rx_command_buf);
-    ClearRXBuffer(&huart2);
-    HAL_UART_Receive_IT(&huart2, ser.rx_ledVal_buf, ser.ledVal_size);
   }
   else
   {
     ProcessData(ser.rx_ledVal_buf);
-    ClearRXBuffer(&huart2);
-    HAL_UART_Receive_IT(&huart2, ser.rx_command_buf, 1);
   }
+
+  ClearRXBuffer(&huart2);
 }
 
 void ProcessCommand(uint8_t* rx_command)
@@ -403,10 +412,15 @@ void ProcessCommand(uint8_t* rx_command)
   ClearTXBuffer();
   ser.tx_command_buf[0] = CONFIRM;
 
+  uint16_t* rx_buf = ser.rx_command_buf;
+  int rx_buf_size = ser.command_size;
+
   switch (cmd)
   {
   case RECEIVE:
     ser.expect_comm_flag = RESET;
+    rx_buf = ser.rx_ledVal_buf;
+    rx_buf_size = ser.ledVal_size;
     break;
 
   case SET:
@@ -431,21 +445,31 @@ void ProcessCommand(uint8_t* rx_command)
   
   default:
     ser.tx_command_buf[0] = ERROR;
+    break;
   }
 
+  ser.last_comm = cmd;
+
   HAL_UART_Transmit(&huart2, ser.tx_command_buf, ser.command_size, 10);
+  HAL_UART_Receive_DMA(&huart2, rx_buf, rx_buf_size);
 }
 
 void ProcessData(uint8_t* rx_data)
 {
-  for(uint16_t i = 0; i < ser.ledVal_size; i += 3) 
+  uint8_t deb[15];
+  for (int i = 0; i < ser.ledVal_size; i ++) {
+    deb[i] = rx_data[i];
+  }
+  for(uint16_t i = 0; i < MAX_LED; i++) 
   {
-    Set_LED(i, rx_data[i], rx_data[i+1], rx_data[i+2]);
+    Set_LED(i, rx_data[i*3], rx_data[i*3+1], rx_data[i*3+2]);
   }
   ser.expect_comm_flag = SET;
   ClearTXBuffer();
   ser.tx_command_buf[0] = CONFIRM;
+
   HAL_UART_Transmit(&huart2, ser.tx_command_buf, ser.command_size, 10);
+  HAL_UART_Receive_DMA(&huart2, ser.rx_command_buf, ser.command_size);
 }
 
 void ClearTXBuffer()
@@ -513,6 +537,7 @@ void Send_LEDs()
 {
 
   uint16_t *pwmData = (uint16_t *)malloc(sizeof(uint16_t) * (24 * MAX_LED + reset));
+  uint16_t debugPwmData[24 * MAX_LED];
 
   uint32_t index = 0;
   uint32_t color;
@@ -526,9 +551,13 @@ void Send_LEDs()
       if (color & (1 << j))
       {
         pwmData[index] = one;
+        debugPwmData[index] = one;
       }
       else
+      {
         pwmData[index] = zero;
+        debugPwmData[index] = zero;
+      }
 
       index++;
     }
@@ -543,9 +572,7 @@ void Send_LEDs()
   HAL_TIM_PWM_Start_DMA(&htim1, TIM_CHANNEL_1, (uint32_t *)pwmData, index);
   free(pwmData);
 
-  while (!dataSentFlag)
-  {
-  };
+  while (!dataSentFlag);
   dataSentFlag = 0;
 }
 
