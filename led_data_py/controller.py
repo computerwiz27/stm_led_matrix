@@ -1,30 +1,23 @@
+import serial_interface as ser
+
 import threading as thr
 import time
 
-done = False
-
-def count():
-    n = 0
-    while not done:
-        print(n)
-        time.sleep(0.25)
-        n += 1
-
 def controller(process, processName: str):
-    global done
     while True:
         i = input()
 
         match i:
             case "s":
-                done = False
+                ser.readDone = False
                 t = thr.Thread(target=process, name=processName)
                 t.start()
                 print("Started {} process".format(t.getName()))
 
             case "q":
-                done = True
+                ser.readDone = True
                 print("Quit {} process".format(t.getName()))
+                ser.close()
 
             case "e":
                 print("Exiting")
@@ -35,4 +28,4 @@ def controller(process, processName: str):
                 
 
 def start():
-    controller(count, "count")
+    controller(ser.read, "read serial")

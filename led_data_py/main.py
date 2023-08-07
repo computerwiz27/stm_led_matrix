@@ -1,6 +1,7 @@
+#!/usr/bin/python
+
 import led_matrix as led
-import controller
+import controller as ctrl
+import serial_interface as ser
 
-import threading as thr
-
-controller.start()
+ctrl.start()

@@ -1,26 +1,28 @@
 /* USER CODE BEGIN Header */
 /**
-  ******************************************************************************
-  * @file           : main.c
-  * @brief          : Main program body
-  ******************************************************************************
-  * @attention
-  *
-  * Copyright (c) 2023 STMicroelectronics.
-  * All rights reserved.
-  *
-  * This software is licensed under terms that can be found in the LICENSE file
-  * in the root directory of this software component.
-  * If no LICENSE file comes with this software, it is provided AS-IS.
-  *
-  ******************************************************************************
-  */
+ ******************************************************************************
+ * @file           : main.c
+ * @brief          : Main program body
+ ******************************************************************************
+ * @attention
+ *
+ * Copyright (c) 2023 STMicroelectronics.
+ * All rights reserved.
+ *
+ * This software is licensed under terms that can be found in the LICENSE file
+ * in the root directory of this software component.
+ * If no LICENSE file comes with this software, it is provided AS-IS.
+ *
+ ******************************************************************************
+ */
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
+#include "serial_interface.h"
+
 #include <stdlib.h>
 /* USER CODE END Includes */
 
@@ -31,13 +33,13 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
-  #define MAX_LED 256
+#define MAX_LED 5
 
-  //LED data transfer times
-  #define DUTY_CYCLE 1250 //ns
-  #define T0H 350 //ns
-  #define T1H 650 //ns
-  #define RES 280 //us
+// LED data transfer times
+#define DUTY_CYCLE 1250 // ns
+#define T0H 350         // ns
+#define T1H 650         // ns
+#define RES 280         // us
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -52,19 +54,17 @@ DMA_HandleTypeDef hdma_tim1_ch1;
 UART_HandleTypeDef huart2;
 
 /* USER CODE BEGIN PV */
-  uint8_t LED_Data[MAX_LED][3];
+int quitFlag = 0;
 
-  int dataSentFlag = 0;
+SERIAL_INTERFACE ser;
 
-  //data values
-  int one;
-  int zero;
-  int reset;
-  
-  uint8_t rx_indx;
-  uint8_t rx_data[8];
-  uint8_t rx_buffer[100];
-  uint8_t transfer_cplt;
+uint8_t LED_Data[MAX_LED][3];
+int dataSentFlag = 0;
+
+// data values
+int one;
+int zero;
+int reset;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -74,10 +74,18 @@ static void MX_DMA_Init(void);
 static void MX_USART2_UART_Init(void);
 static void MX_TIM1_Init(void);
 /* USER CODE BEGIN PFP */
+void SerialInterface_Init(void);
+void SerialInterface_Free(void);
 void HAL_TIM_PulseFinishedCallback(TIM_HandleTypeDef);
+void HAL_UART_RxCpltCallback(UART_HandleTypeDef*);
+void ClearTXBuffer(void);
+void ClearRXBuffer(UART_HandleTypeDef*);
+void ProcessCommand(uint8_t*);
+void ProcessData(uint8_t*);
+void Blink(int);
 void CalculateDataValues(void);
 void Send_LEDs(void);
-void Set_LED(int, uint8_t, uint8_t, uint8_t);
+void Set_LED(uint16_t, uint8_t, uint8_t, uint8_t);
 void Set_LEDs(uint8_t, uint8_t, uint8_t);
 void Reset_LEDs(void);
 /* USER CODE END PFP */
@@ -94,7 +102,7 @@ void Reset_LEDs(void);
 int main(void)
 {
   /* USER CODE BEGIN 1 */
-
+  
   /* USER CODE END 1 */
 
   /* MCU Configuration--------------------------------------------------------*/
@@ -119,20 +127,26 @@ int main(void)
   MX_USART2_UART_Init();
   MX_TIM1_Init();
   /* USER CODE BEGIN 2 */
-  uint8_t txt[30] = "hello1\n\r";
-  HAL_UART_Transmit(&huart2, txt, sizeof(txt), 10);
-
-  HAL_UART_Receive_IT(&huart2, rx_data, sizeof(rx_data));  
+  Reset_LEDs();
+  Set_LEDs(75, 0, 0);
+  Send_LEDs();
+  SerialInterface_Init();
+  HAL_UART_Receive_IT(&huart2, ser.rx_command_buf, ser.command_size);
+  Blink(3);
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
-  while (1)
+  while (!quitFlag)
   {
     /* USER CODE END WHILE */
-
+    Send_LEDs();
     /* USER CODE BEGIN 3 */
   }
+
+  SerialInterface_Free();
+
+  return 0;
   /* USER CODE END 3 */
 }
 
@@ -308,6 +322,7 @@ static void MX_GPIO_Init(void)
 {
   GPIO_InitTypeDef GPIO_InitStruct = {0};
 /* USER CODE BEGIN MX_GPIO_Init_1 */
+
 /* USER CODE END MX_GPIO_Init_1 */
 
   /* GPIO Ports Clock Enable */
@@ -331,6 +346,28 @@ static void MX_GPIO_Init(void)
 }
 
 /* USER CODE BEGIN 4 */
+void SerialInterface_Init() 
+{
+  ser.expect_comm_flag = SET;
+
+  ser.command_size = 6;
+  uint8_t* _rx_command = (uint8_t*)malloc(ser.command_size * sizeof(uint8_t));
+  ser.rx_command_buf = _rx_command;
+  uint8_t* _tx_command = (uint8_t*)malloc(ser.command_size * sizeof(uint8_t));
+  ser.tx_command_buf = _tx_command;
+
+  ser.ledVal_size = sizeof(uint8_t) * 3 * MAX_LED;
+  uint8_t* _rx_ledVal = (uint8_t*)malloc(ser.ledVal_size);
+  ser.rx_ledVal_buf = _rx_ledVal;
+}
+
+void SerialInterface_Free()
+{
+  free(ser.rx_command_buf);
+  free(ser.tx_command_buf);
+  free(ser.rx_ledVal_buf);
+}
+
 void HAL_TIM_PWM_PulseFinishedCallback(TIM_HandleTypeDef *htim)
 {
   HAL_TIM_PWM_Stop_DMA(&htim1, TIM_CHANNEL_1);
@@ -340,22 +377,113 @@ void HAL_TIM_PWM_PulseFinishedCallback(TIM_HandleTypeDef *htim)
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 {
   UNUSED(huart);
-  HAL_UART_Transmit(&huart2, rx_data, sizeof(rx_data), 10);
+
+  if (ser.expect_comm_flag == SET) 
+  {
+    ProcessCommand(ser.rx_command_buf);
+    ClearRXBuffer(&huart2);
+    HAL_UART_Receive_IT(&huart2, ser.rx_ledVal_buf, ser.ledVal_size);
+  }
+  else
+  {
+    ProcessData(ser.rx_ledVal_buf);
+    ClearRXBuffer(&huart2);
+    HAL_UART_Receive_IT(&huart2, ser.rx_command_buf, 1);
+  }
 }
 
-void CalculateDataValues() 
+void ProcessCommand(uint8_t* rx_command)
 {
-  int HCLKfreq = HAL_RCC_GetHCLKFreq() / 1000000; //in MHz
+  uint8_t cmd = rx_command[0];
+  uint8_t r = rx_command[1];
+  uint8_t g = rx_command[2];
+  uint8_t b = rx_command[3];
+  uint16_t led = (uint16_t)rx_command[4] << 4 | rx_command[5];
 
+  ClearTXBuffer();
+  ser.tx_command_buf[0] = CONFIRM;
+
+  switch (cmd)
+  {
+  case RECEIVE:
+    ser.expect_comm_flag = RESET;
+    break;
+
+  case SET:
+    Set_LED(led, r, g, b);
+    break;
+
+  case SET_ALL:
+    Set_LEDs(r, g, b);
+    break;
+
+  case RESET:
+    Reset_LEDs();
+    break;
+
+  case QUIT:
+    quitFlag = 1;
+    break;
+
+  case CONFIRM: break;
+  case ERROR: break;
+  case SEND: break;
+  
+  default:
+    ser.tx_command_buf[0] = ERROR;
+  }
+
+  HAL_UART_Transmit(&huart2, ser.tx_command_buf, ser.command_size, 10);
+}
+
+void ProcessData(uint8_t* rx_data)
+{
+  for(uint16_t i = 0; i < ser.ledVal_size; i += 3) 
+  {
+    Set_LED(i, rx_data[i], rx_data[i+1], rx_data[i+2]);
+  }
+  ser.expect_comm_flag = SET;
+  ClearTXBuffer();
+  ser.tx_command_buf[0] = CONFIRM;
+  HAL_UART_Transmit(&huart2, ser.tx_command_buf, ser.command_size, 10);
+}
+
+void ClearTXBuffer()
+{
+  for (int i = 0; i < ser.command_size; i++)
+  {
+    ser.tx_command_buf[i] = 0;
+  }
+}
+
+void ClearRXBuffer(UART_HandleTypeDef *huart)
+{
+  huart->RxXferCount = 0;
+  huart->RxXferSize = 0;
+  huart->pRxBuffPtr = NULL;  
+}
+
+void Blink(int n)
+{
+  for (int i = 0; i < n*2; i++) 
+  {
+    HAL_GPIO_TogglePin(GPIOA, LD2_Pin);
+    HAL_Delay(100);
+  }
+}
+
+void CalculateDataValues()
+{
+  int HCLKfreq = HAL_RCC_GetHCLKFreq() / 1000000; // in MHz
 
   int ARR = 0;
-  float cycledt = 1 / (float)HCLKfreq * (float)ARR * 1000; //in ns
-  while (cycledt < DUTY_CYCLE) 
+  float cycledt = 1 / (float)HCLKfreq * (float)ARR * 1000; // in ns
+  while (cycledt < DUTY_CYCLE)
   {
-    ARR ++;
+    ARR++;
     cycledt = 1 / (float)HCLKfreq * (float)ARR * 1000;
   }
-  __HAL_TIM_SET_AUTORELOAD(&htim1, ARR-1);
+  __HAL_TIM_SET_AUTORELOAD(&htim1, ARR - 1);
 
   one = 0;
   float onedt = ((float)one / (float)ARR) * cycledt;
@@ -366,7 +494,7 @@ void CalculateDataValues()
   }
 
   zero = 0;
-  float zerodt  =((float)zero / (float)ARR) * cycledt;
+  float zerodt = ((float)zero / (float)ARR) * cycledt;
   while (zerodt < T0H)
   {
     zero++;
@@ -375,7 +503,7 @@ void CalculateDataValues()
 
   reset = 0;
   float cyclems = (float)cycledt / 1000;
-  while(cyclems * reset <= RES)
+  while (cyclems * reset <= RES)
   {
     reset++;
   }
@@ -383,51 +511,54 @@ void CalculateDataValues()
 
 void Send_LEDs()
 {
-  uint16_t* pwmData = (uint16_t *)malloc(sizeof(uint16_t) * (24*MAX_LED + reset));
-  
+
+  uint16_t *pwmData = (uint16_t *)malloc(sizeof(uint16_t) * (24 * MAX_LED + reset));
+
   uint32_t index = 0;
   uint32_t color;
 
   for (int i = 0; i < MAX_LED; i++)
   {
-    color = ((LED_Data[i][0]<<16) | (LED_Data[i][1]<<8) | (LED_Data[i][2]));
+    color = ((LED_Data[i][0] << 16) | (LED_Data[i][1] << 8) | (LED_Data[i][2]));
 
-
-    for (int j = 23; j >= 0; j--) 
+    for (int j = 23; j >= 0; j--)
     {
-      if (color & (1 << j)) 
+      if (color & (1 << j))
       {
         pwmData[index] = one;
       }
-      else pwmData[index] = zero;
+      else
+        pwmData[index] = zero;
 
-      index++; 
+      index++;
     }
   }
 
-  for (int i = 0; i < reset; i++) 
+  for (int i = 0; i < reset; i++)
   {
     pwmData[index] = 0;
     index++;
   }
 
-    HAL_TIM_PWM_Start_DMA(&htim1, TIM_CHANNEL_1, (uint32_t*)pwmData, index);
-    free(pwmData);
+  HAL_TIM_PWM_Start_DMA(&htim1, TIM_CHANNEL_1, (uint32_t *)pwmData, index);
+  free(pwmData);
 
-    while (!dataSentFlag) {};
-    dataSentFlag = 0;    
+  while (!dataSentFlag)
+  {
+  };
+  dataSentFlag = 0;
 }
 
-void Set_LED(int no, uint8_t r, uint8_t g, uint8_t b) 
+void Set_LED(uint16_t no, uint8_t r, uint8_t g, uint8_t b)
 {
   LED_Data[no][0] = r;
   LED_Data[no][1] = g;
   LED_Data[no][2] = b;
 }
 
-void Set_LEDs(uint8_t r, uint8_t g, uint8_t b) 
+void Set_LEDs(uint8_t r, uint8_t g, uint8_t b)
 {
-  for (int i = 0; i < MAX_LED; i++) 
+  for (int i = 0; i < MAX_LED; i++)
   {
     Set_LED(i, r, g, b);
   }

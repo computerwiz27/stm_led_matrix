@@ -19,7 +19,9 @@
                 "cwd": "led_matrix_controller"
             },
             "command": "make",
-            "args": ["bin"]
+            "args": [
+                "bin"
+            ]
         },
         {
             "label": "Flash",
@@ -29,7 +31,18 @@
                 "cwd": "led_matrix_controller"
             },
             "command": "make",
-            "args": ["flash"]
+            "args": [
+                "flash"
+            ]
+        },
+        {
+            "label": "Build for Debug",
+            "group": "build",
+            "type": "shell",
+            "options": {
+                "cwd": "led_matrix_controller"
+            },
+            "command":["make _build", ";", "make flash"]
         }
     ]
 }
