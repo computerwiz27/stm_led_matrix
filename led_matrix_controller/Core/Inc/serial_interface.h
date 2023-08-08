@@ -10,13 +10,13 @@
 #define QUIT    0x7
 
 struct _SERIAL_INTERFACE {
-    uint8_t expect_comm_flag;
-    uint8_t last_comm;
+    uint8_t expect_cmd_flag;
+    uint8_t last_cmd;
     int command_size;
     uint8_t* rx_command_buf;
     uint8_t* tx_command_buf;
-    int ledVal_size;
-    uint8_t* rx_ledVal_buf;
+    int data_size;
+    uint8_t* rx_data_buf;
 };
 typedef struct _SERIAL_INTERFACE SERIAL_INTERFACE;
 

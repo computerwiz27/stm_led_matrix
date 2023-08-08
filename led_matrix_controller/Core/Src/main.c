@@ -33,13 +33,13 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
-#define MAX_LED 5
+#define MAX_LED 2
 
 // LED data transfer times
 #define DUTY_CYCLE 1250 // ns
 #define T0H 280         // ns
 #define T1H 650         // ns
-#define RES 280         // us
+#define RES 140         // us
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -78,11 +78,11 @@ static void MX_TIM1_Init(void);
 void SerialInterface_Init(void);
 void SerialInterface_Free(void);
 void HAL_TIM_PulseFinishedCallback(TIM_HandleTypeDef);
-void HAL_UART_RxCpltCallback(UART_HandleTypeDef*);
+void HAL_UART_RxCpltCallback(UART_HandleTypeDef *);
 void ClearTXBuffer(void);
-void ClearRXBuffer(UART_HandleTypeDef*);
-void ProcessCommand(uint8_t*);
-void ProcessData(uint8_t*);
+void ClearRXBuffer(UART_HandleTypeDef *);
+void ProcessCommand(uint8_t *);
+void ProcessData(uint8_t *);
 void Blink(int);
 void CalculateDataValues(void);
 void Send_LEDs(void);
@@ -97,13 +97,13 @@ void Reset_LEDs(void);
 /* USER CODE END 0 */
 
 /**
-  * @brief  The application entry point.
-  * @retval int
-  */
+ * @brief  The application entry point.
+ * @retval int
+ */
 int main(void)
 {
   /* USER CODE BEGIN 1 */
-  
+
   /* USER CODE END 1 */
 
   /* MCU Configuration--------------------------------------------------------*/
@@ -156,17 +156,17 @@ int main(void)
 }
 
 /**
-  * @brief System Clock Configuration
-  * @retval None
-  */
+ * @brief System Clock Configuration
+ * @retval None
+ */
 void SystemClock_Config(void)
 {
   RCC_OscInitTypeDef RCC_OscInitStruct = {0};
   RCC_ClkInitTypeDef RCC_ClkInitStruct = {0};
 
   /** Initializes the RCC Oscillators according to the specified parameters
-  * in the RCC_OscInitTypeDef structure.
-  */
+   * in the RCC_OscInitTypeDef structure.
+   */
   RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSE;
   RCC_OscInitStruct.HSEState = RCC_HSE_BYPASS;
   RCC_OscInitStruct.HSEPredivValue = RCC_HSE_PREDIV_DIV1;
@@ -180,9 +180,8 @@ void SystemClock_Config(void)
   }
 
   /** Initializes the CPU, AHB and APB buses clocks
-  */
-  RCC_ClkInitStruct.ClockType = RCC_CLOCKTYPE_HCLK|RCC_CLOCKTYPE_SYSCLK
-                              |RCC_CLOCKTYPE_PCLK1|RCC_CLOCKTYPE_PCLK2;
+   */
+  RCC_ClkInitStruct.ClockType = RCC_CLOCKTYPE_HCLK | RCC_CLOCKTYPE_SYSCLK | RCC_CLOCKTYPE_PCLK1 | RCC_CLOCKTYPE_PCLK2;
   RCC_ClkInitStruct.SYSCLKSource = RCC_SYSCLKSOURCE_PLLCLK;
   RCC_ClkInitStruct.AHBCLKDivider = RCC_SYSCLK_DIV1;
   RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV2;
@@ -195,10 +194,10 @@ void SystemClock_Config(void)
 }
 
 /**
-  * @brief TIM1 Initialization Function
-  * @param None
-  * @retval None
-  */
+ * @brief TIM1 Initialization Function
+ * @param None
+ * @retval None
+ */
 static void MX_TIM1_Init(void)
 {
 
@@ -217,7 +216,7 @@ static void MX_TIM1_Init(void)
   htim1.Instance = TIM1;
   htim1.Init.Prescaler = 0;
   htim1.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim1.Init.Period = 90-1;
+  htim1.Init.Period = 90 - 1;
   htim1.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
   htim1.Init.RepetitionCounter = 0;
   htim1.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
@@ -266,14 +265,13 @@ static void MX_TIM1_Init(void)
 
   /* USER CODE END TIM1_Init 2 */
   HAL_TIM_MspPostInit(&htim1);
-
 }
 
 /**
-  * @brief USART2 Initialization Function
-  * @param None
-  * @retval None
-  */
+ * @brief USART2 Initialization Function
+ * @param None
+ * @retval None
+ */
 static void MX_USART2_UART_Init(void)
 {
 
@@ -299,12 +297,11 @@ static void MX_USART2_UART_Init(void)
   /* USER CODE BEGIN USART2_Init 2 */
 
   /* USER CODE END USART2_Init 2 */
-
 }
 
 /**
-  * Enable DMA controller clock
-  */
+ * Enable DMA controller clock
+ */
 static void MX_DMA_Init(void)
 {
 
@@ -318,20 +315,19 @@ static void MX_DMA_Init(void)
   /* DMA1_Channel6_IRQn interrupt configuration */
   HAL_NVIC_SetPriority(DMA1_Channel6_IRQn, 0, 0);
   HAL_NVIC_EnableIRQ(DMA1_Channel6_IRQn);
-
 }
 
 /**
-  * @brief GPIO Initialization Function
-  * @param None
-  * @retval None
-  */
+ * @brief GPIO Initialization Function
+ * @param None
+ * @retval None
+ */
 static void MX_GPIO_Init(void)
 {
   GPIO_InitTypeDef GPIO_InitStruct = {0};
-/* USER CODE BEGIN MX_GPIO_Init_1 */
+  /* USER CODE BEGIN MX_GPIO_Init_1 */
 
-/* USER CODE END MX_GPIO_Init_1 */
+  /* USER CODE END MX_GPIO_Init_1 */
 
   /* GPIO Ports Clock Enable */
   __HAL_RCC_GPIOC_CLK_ENABLE();
@@ -349,31 +345,31 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(LD2_GPIO_Port, &GPIO_InitStruct);
 
-/* USER CODE BEGIN MX_GPIO_Init_2 */
-/* USER CODE END MX_GPIO_Init_2 */
+  /* USER CODE BEGIN MX_GPIO_Init_2 */
+  /* USER CODE END MX_GPIO_Init_2 */
 }
 
 /* USER CODE BEGIN 4 */
-void SerialInterface_Init() 
+void SerialInterface_Init()
 {
-  ser.expect_comm_flag = SET;
+  ser.expect_cmd_flag = SET;
 
   ser.command_size = 6;
-  uint8_t* _rx_command = (uint8_t*)malloc(ser.command_size * sizeof(uint8_t));
+  uint8_t *_rx_command = (uint8_t *)malloc(ser.command_size * sizeof(uint8_t));
   ser.rx_command_buf = _rx_command;
-  uint8_t* _tx_command = (uint8_t*)malloc(ser.command_size * sizeof(uint8_t));
+  uint8_t *_tx_command = (uint8_t *)malloc(ser.command_size * sizeof(uint8_t));
   ser.tx_command_buf = _tx_command;
 
-  ser.ledVal_size = sizeof(uint8_t) * 3 * MAX_LED;
-  uint8_t* _rx_ledVal = (uint8_t*)malloc(ser.ledVal_size);
-  ser.rx_ledVal_buf = _rx_ledVal;
+  ser.data_size = sizeof(uint8_t) * 3 * MAX_LED;
+  uint8_t *_rx_data = (uint8_t *)malloc(ser.data_size);
+  ser.rx_data_buf = _rx_data;
 }
 
 void SerialInterface_Free()
 {
   free(ser.rx_command_buf);
   free(ser.tx_command_buf);
-  free(ser.rx_ledVal_buf);
+  free(ser.rx_data_buf);
 }
 
 void HAL_TIM_PWM_PulseFinishedCallback(TIM_HandleTypeDef *htim)
@@ -384,24 +380,24 @@ void HAL_TIM_PWM_PulseFinishedCallback(TIM_HandleTypeDef *htim)
 
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 {
-  char hello[20] = "received\n\r";
-  HAL_UART_Transmit(&huart2, hello, sizeof(hello), 10);
+  HAL_UART_DMAStop(&huart2);
 
-  UNUSED(huart);
+  char msg[20] = "received\n\r";
+  HAL_UART_Transmit(&huart, msg, sizeof(msg), 10);
 
-  if (ser.expect_comm_flag == SET) 
+  if (ser.expect_cmd_flag == SET)
   {
     ProcessCommand(ser.rx_command_buf);
   }
   else
   {
-    ProcessData(ser.rx_ledVal_buf);
+    ProcessData(ser.rx_data_buf);
   }
 
-  ClearRXBuffer(&huart2);
+  ClearRXBuffer(&huart);
 }
 
-void ProcessCommand(uint8_t* rx_command)
+void ProcessCommand(uint8_t *rx_command)
 {
   uint8_t cmd = rx_command[0];
   uint8_t r = rx_command[1];
@@ -412,15 +408,10 @@ void ProcessCommand(uint8_t* rx_command)
   ClearTXBuffer();
   ser.tx_command_buf[0] = CONFIRM;
 
-  uint16_t* rx_buf = ser.rx_command_buf;
-  int rx_buf_size = ser.command_size;
-
   switch (cmd)
   {
   case RECEIVE:
-    ser.expect_comm_flag = RESET;
-    rx_buf = ser.rx_ledVal_buf;
-    rx_buf_size = ser.ledVal_size;
+    ser.expect_cmd_flag = RESET;
     break;
 
   case SET:
@@ -439,32 +430,39 @@ void ProcessCommand(uint8_t* rx_command)
     quitFlag = 1;
     break;
 
-  case CONFIRM: break;
-  case ERROR: break;
-  case SEND: break;
-  
+  case CONFIRM:
+    break;
+  case ERROR:
+    break;
+  case SEND:
+    break;
+
   default:
     ser.tx_command_buf[0] = ERROR;
     break;
   }
 
-  ser.last_comm = cmd;
+  ser.last_cmd = cmd;
 
   HAL_UART_Transmit(&huart2, ser.tx_command_buf, ser.command_size, 10);
-  HAL_UART_Receive_DMA(&huart2, rx_buf, rx_buf_size);
+  if (ser.expect_cmd_flag == SET)
+  {
+    HAL_UART_Receive_DMA(&huart2, ser.rx_command_buf, ser.command_size);
+  }
+  else
+  {
+    HAL_UART_Receive_DMA(&huart2, ser.rx_data_buf, ser.data_size);
+  }
 }
 
-void ProcessData(uint8_t* rx_data)
+void ProcessData(uint8_t *rx_data)
 {
-  uint8_t deb[15];
-  for (int i = 0; i < ser.ledVal_size; i ++) {
-    deb[i] = rx_data[i];
-  }
-  for(uint16_t i = 0; i < MAX_LED; i++) 
+  for (uint16_t i = 0; i < MAX_LED; i++)
   {
-    Set_LED(i, rx_data[i*3], rx_data[i*3+1], rx_data[i*3+2]);
+    Set_LED(i, rx_data[i * 3], rx_data[i * 3 + 1], rx_data[i * 3 + 2]);
   }
-  ser.expect_comm_flag = SET;
+
+  ser.expect_cmd_flag = SET;
   ClearTXBuffer();
   ser.tx_command_buf[0] = CONFIRM;
 
@@ -484,12 +482,12 @@ void ClearRXBuffer(UART_HandleTypeDef *huart)
 {
   huart->RxXferCount = 0;
   huart->RxXferSize = 0;
-  huart->pRxBuffPtr = NULL;  
+  huart->pRxBuffPtr = NULL;
 }
 
 void Blink(int n)
 {
-  for (int i = 0; i < n*2; i++) 
+  for (int i = 0; i < n * 2; i++)
   {
     HAL_GPIO_TogglePin(GPIOA, LD2_Pin);
     HAL_Delay(100);
@@ -572,7 +570,8 @@ void Send_LEDs()
   HAL_TIM_PWM_Start_DMA(&htim1, TIM_CHANNEL_1, (uint32_t *)pwmData, index);
   free(pwmData);
 
-  while (!dataSentFlag);
+  while (!dataSentFlag)
+    ;
   dataSentFlag = 0;
 }
 
@@ -599,9 +598,9 @@ void Reset_LEDs()
 /* USER CODE END 4 */
 
 /**
-  * @brief  This function is executed in case of error occurrence.
-  * @retval None
-  */
+ * @brief  This function is executed in case of error occurrence.
+ * @retval None
+ */
 void Error_Handler(void)
 {
   /* USER CODE BEGIN Error_Handler_Debug */
@@ -613,14 +612,14 @@ void Error_Handler(void)
   /* USER CODE END Error_Handler_Debug */
 }
 
-#ifdef  USE_FULL_ASSERT
+#ifdef USE_FULL_ASSERT
 /**
-  * @brief  Reports the name of the source file and the source line number
-  *         where the assert_param error has occurred.
-  * @param  file: pointer to the source file name
-  * @param  line: assert_param error line source number
-  * @retval None
-  */
+ * @brief  Reports the name of the source file and the source line number
+ *         where the assert_param error has occurred.
+ * @param  file: pointer to the source file name
+ * @param  line: assert_param error line source number
+ * @retval None
+ */
 void assert_failed(uint8_t *file, uint32_t line)
 {
   /* USER CODE BEGIN 6 */
