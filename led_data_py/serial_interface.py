@@ -1,14 +1,8 @@
-import serial as ser
-
-ser = ser.Serial(port='/dev/ttyACM0', baudrate=115200, timeout = 0.2)
-
-readDone = True
-
-def read():
-    while not readDone:
-        line = ser.readline()
-        print(line)
-
-def close():
-    ser.close()
-
+CONFIRM = 0
+ERROR   = 1
+RECEIVE = 2
+SEND    = 3
+SET     = 4
+SET_ALL = 5
+RESET   = 6
+QUIT    = 7

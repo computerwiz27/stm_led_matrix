@@ -1,4 +1,4 @@
-import serial_interface as ser
+import serial_manager as ser
 
 import threading as thr
 import time

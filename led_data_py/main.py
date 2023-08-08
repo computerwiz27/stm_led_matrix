@@ -2,6 +2,10 @@
 
 import led_matrix as led
 import controller as ctrl
-import serial_interface as ser
+import serial_manager as ser
 
-ctrl.start()
+#ctrl.start()
+
+device = "STMicroelectronics STM32 STLink"
+
+ser.connect(device)
