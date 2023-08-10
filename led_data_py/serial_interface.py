@@ -6,3 +6,5 @@ SET     = 4
 SET_ALL = 5
 RESET   = 6
 QUIT    = 7
+
+COMMAND_SIZE = 6

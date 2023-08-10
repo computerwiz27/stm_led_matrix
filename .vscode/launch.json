@@ -6,11 +6,11 @@
     "configurations": [
         {
             "name": "STLink Debug",
+            "type": "cortex-debug",
             "cwd": "${workspaceFolder}/led_matrix_controller",
             "preLaunchTask": "Build for Debug",
             "executable": "${workspaceFolder}/led_matrix_controller/build/led_matrix_controller.elf",
             "request": "launch",
-            "type": "cortex-debug",
             "servertype": "stlink",
             "device": "STM32F103RB",
             "interface": "swd",
@@ -30,6 +30,13 @@
                     }
                 ]
             }
+        },
+        {
+            "name": "py controller debug",
+            "type": "python",
+            "cwd": "${workspaceFolder}/led_data_py",
+            "request": "launch",
+            "program": "${workspaceFolder}/led_data_py/main.py"
         }
     ]
 }
