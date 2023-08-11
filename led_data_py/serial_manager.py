@@ -48,10 +48,10 @@ def sendCommand(opc, led=0, r=0, g=0, b=0):
 def sendSpecs():
     res = sendCommand(inter.SEND)
     matrix_shape = [0, 0, 0]
-    matrix_shape[0] = int.from_bytes(res[0])
-    matrix_shape[1] = int.from_bytes(res[1])
-    matrix_shape[2] = int.from_bytes(res[2])
+    matrix_shape[0] = res[0]
+    matrix_shape[1] = res[1]
+    matrix_shape[2] = res[2]
     towers_shape = [0, 0]
-    towers_shape[0] = int.from_bytes(res[3])
-    towers_shape[1] = int.from_bytes(res[4])
+    towers_shape[0] = res[3]
+    towers_shape[1] = res[4]
     time.sleep(1)

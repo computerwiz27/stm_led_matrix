@@ -142,7 +142,7 @@ int main(void)
   HAL_UART_Receive_DMA(&huart2, ser.rx_command_buf, ser.command_size);
 
   WaitForConnection();
-  Blink(3);
+  Blink(5);
 
   /* USER CODE END 2 */
 
@@ -435,9 +435,8 @@ int WaitForConfirm()
   ser.expect_conf_flag = SET;
   HAL_UART_DMAStop(&huart2);
   HAL_UART_Receive_DMA(&huart2, ser.rx_command_buf, ser.command_size);
-  ClearRXBuffer(&huart2);
+  __HAL_UART_CLEAR_FLAG(&huart2, UART_FLAG_RXNE);
   while(__HAL_UART_GET_FLAG(&huart2, UART_FLAG_RXNE) != 1);
-
   uint8_t confirm = ser.rx_command_buf[0]; 
 
   ClearRXBuffer(&huart2);
@@ -449,6 +448,7 @@ int WaitForConfirm()
 void Transmit(uint8_t *pData, uint16_t Size)
 {
   HAL_UART_Transmit_DMA(&huart2, pData, Size);
+  __HAL_UART_CLEAR_FLAG(&huart2, UART_FLAG_TC);
   while (__HAL_UART_GET_FLAG(&huart2, UART_FLAG_TC) != 1);
   ClearTXBuffer();
 }
@@ -539,7 +539,6 @@ void ClearRXBuffer(UART_HandleTypeDef *huart)
   huart->RxXferCount = 0;
   huart->RxXferSize = 0;
   huart->pRxBuffPtr = NULL;
-  huart->
 }
 
 void Blink(int n)
@@ -558,7 +557,8 @@ void WaitForConnection()
   {
     ClearTXBuffer();
     ser.tx_command_buf[0] = CONFIRM;
-    Transmit(ser.tx_command_buf, ser.command_size);
+    char msg[] = "connected\n\r";
+    Transmit(msg, 50);
     ser.connected_flag = SET;
     return;
   }
